@@ -1,0 +1,243 @@
+/**
+* @author ${Author}
+* @date ${Date}
+*/
+$(function () {
+    fun_selectDg();
+});
+
+var fun_selectDg = function () {
+
+    var m_dg_sort = "";
+    var m_select_dg_rowId = "";
+    var m_select_dg_rowIndex = 0;
+    var m_id = "";
+    var m_flag_submit = true;
+    var m_rows = [];
+
+    init_controller();
+
+    function init_controller() {
+        //新增
+        $('body').on("click", "#btn_new", function () {
+        openDlg_New();
+        });
+
+        //删除
+        $('body').on("click", "#btn_delete", function () {
+        openDlg_Delete();
+        });
+
+        // $('body').on("click", "#btnSaveSingle", function () {
+        //     if(m_flag_submit){
+        //         m_flag_submit = false;
+        //         packingSaveObj();
+        //     }else{
+        //         showAlertWarning("请勿重复提交表单信息！");
+        //     }
+        // });
+    }
+
+    function packingSaveObj(){
+
+    }
+
+    init_selectDg();
+
+    function init_selectDg() {
+        if (NOTNULL(g_in_data)) {
+            g_in_obj = $.parseJSON(g_in_data);
+            m_id = g_in_obj.id;
+        } else {
+            showAlertErr("输入参数获取失败，请刷新后重试...",function() {
+            parent.layer.close(g_in_index);
+        });
+            return;
+        }
+        init_datagrid();
+    }
+
+    function init_datagrid() {
+        var arr_columns = assemble_dg_columns();
+        $("#dg").datagrid({
+            // toolbar: '#tb',
+            url: 'jee/VNormCheckInfoC/listAllVNormCheckInfoDetails?id=' + m_id,
+            // pagination: true,
+            scrollbarSize:0,
+            pageList: [50, 100, 200, 500],
+            pageSize: 100,
+            rownumbers: true,
+            nowrap: false,
+            loadMsg: '正在加载数据',
+            remoteSort: true,
+            columns: [arr_columns],
+            idField: "id",
+            singleSelect: true,
+            selectOnCheck: true,
+            checkOnSelect: true,
+            sortName : 'createtime',
+            sortOrder : 'desc',
+            view: myview_2,
+            emptyMsg: '列表为空',
+            onLoadSuccess: onLoadSuccess_dg,
+            onSelect: onSelect_row_dg,
+            onDblClickRow:onDblClickRow_dg,
+            // loadFilter : function(_json) {
+            // 	if (_json != null) {
+            //        return _json;
+            // 	} else {
+            // 		showAlertWarning("加载页面信息返回结果为空,请刷新页面后重试！");
+            // 		return [];
+            // 	}
+            // },
+            // onLoadError : function(arg) {
+            // 	if (args.statusText == "Unauthorized") {
+            // 		window.location.href = "vworkerC/timeout";
+            // 	} else {
+            // 		showAlertErr("查询页面信息错误。" + args.statusText);
+            // 	}
+            // },
+            // onSortColumn:function(sort, order){
+            // m_dg_sort = sort;
+            // }
+        });
+
+    }
+
+    //datagrid加载完数据的回调函数
+    function onLoadSuccess_dg(data) {
+        if (NULL(data) || NULL(data.rows) || data.rows.length <= 0) {
+            scrollShow($("#dg"));
+            $("#dg").datagrid("clearSelections");
+            return;
+        }else {
+            var rows = data.rows;
+            for (var i = 0; i < rows.length; i++) {
+                var row = rows[i];
+                m_rows.push(row.id_org);
+            }
+            if (NOTNULL(m_select_dg_rowId)) {
+                $("#dg").datagrid("clearSelections");
+                $("#dg").datagrid("selectRecord", m_select_dg_rowId);
+                var tmp = $("#dg").datagrid("getSelected");
+                if (NULL(tmp)) {
+                    m_select_dg_rowIndex = 0;
+                    $("#dg").datagrid("selectRow", m_select_dg_rowIndex);
+                }
+            }else {
+                if (m_select_dg_rowIndex >= data.rows.length) {
+                    m_select_dg_rowIndex = data.rows.length - 1;
+                }
+                $("#dg").datagrid("selectRow", m_select_dg_rowIndex);
+            }
+        }
+        LoadSuccessEnd();
+    }
+
+    function LoadSuccessEnd() {
+        //datagrid的数据加载完成后，设置搜索框获取焦点。
+        if ($("#dg_searchbox").length > 0) {
+            setTimeout(function () {
+                $("#dg_searchbox").searchbox("textbox").focus();
+            }, 200);
+        };
+    }
+
+    function onSelect_row_dg(rowIndex, rowData) {
+        m_select_dg_rowId = rowData.id;
+        m_select_dg_rowIndex = rowIndex;
+        // if (rowData.state == 0) {//只有未签收状态才能删除
+        //     $('#btn_delete').linkbutton('enable');
+        // }else {
+        //     $('#btn_delete').linkbutton('disable');
+        // }
+    }
+
+    //页面显示信息
+    function assemble_dg_columns() {
+        var arr = new Array();
+        arr.push({"field": "ck", checkbox: true,"hidden": true});
+        arr.push({"field": "id", "title": 'id', "width": '1%', "align": 'center', "hidden": true});
+        arr.push({"field": "state_val", "title": '状态', "width": '20%', "align": 'center'});
+        arr.push({"field": "createtime", "title": '时间', "width": '30%', "align": 'center'});
+        arr.push({"field": "remarks", "title": '驳回原因', "width": '48%', "align": 'center'});
+        return arr;
+    }
+
+    function onDblClickRow_dg(rowIndex, rowData) {
+    }
+
+    function openDlg_New(){
+        var arr = [];
+        var rows = $('#dg').datagrid('getData').rows;
+        if(NOTNULL(rows)) {
+            for (var i = 0; i < rows.length; i++) {
+                var row = rows[i];
+                var id = row.id_org;
+                arr.push(id);
+            }
+        }
+        var iData = {"arr":arr, "id": m_id};
+        var indexs = parent.layer.open({
+            type: 2,//iframe 类型
+            title: "选择部门",
+            shadeClose: false,//点击遮罩层是否关闭
+            shade: 0.3,//遮罩层系数
+            scrollbar: true,//滚动条，后期可能会改
+            anim: 5,//打开动画
+            maxmin: true,
+            content: ["view/construction/selectDgNew?r=" + Math.random() + "&data=" + URLJSON(iData)], //这里content是一个URL，如果你不想让iframe出现滚动条，你还可以content: ['http://sentsin.com', 'no']
+            area: setDlgSize(2),//iframe 页面大小
+            id: "selectDgNew",//iframe 页面ID
+            resize: true,//不允许拉伸
+            success: function (layero, index) {// 弹出成功之后，隐藏最小化按钮
+            // layero.find('.layui-layer-min').hide();//加载成功后吟唱最小化按钮
+            },
+            cancel: function () {//取消事件
+
+            },
+            end: function () {//层销毁事件
+                $('#dg').datagrid('reload');
+            }
+        });
+    }
+
+    function openDlg_Delete(){
+        // 获得当前的选择行
+        var selectedRows = $("#dg").datagrid("getChecked");
+        if (selectedRows.length == 0) {
+            showAlertWarning("请选择需要删除的信息...");
+            return false;
+        } else {
+            showmsgConfirm('确认删除该信息?', function (index) {
+                deleteObj(selectedRows);
+            });
+        }
+    }
+
+    function deleteObj(arr) {
+        var ids = "";
+        for (var i = 0; i < arr.length; i++) {
+            var row = arr[i];
+            var id = row.id;
+            ids += id;
+            if (i != arr.length - 1) {
+                ids += "@@";
+            }
+        }
+        ajaxPost("jee/ConstructionDayPlanC/deleteDistributeById", {"id" : ids}, "json", function (_json) {
+            if (_json != null) {
+                if (NOTNULL(_json.status) && _json.status == "success") {
+                    showmsgOK("删除成功...");
+                    m_select_dg_rowId = "";
+                    $('#dg').datagrid('reload');
+                } else {
+                    showAlertWarning(_json.message);
+                }
+            } else {
+                showAlertErr("删除失败，返回结果为NULL...");
+            }
+        });
+    }
+
+}

@@ -1,0 +1,177 @@
+package com.enter.net.fhbusiness.${pageName}.controller;
+
+import com.enter.net.fhbusiness.${pageName}.model.${ModelName};
+import com.enter.net.fhbusiness.${pageName}.service.${ServiceName};
+import com.enter.net.frame.common.BaseEntityController;
+import com.enter.net.frame.util.FileUploadService;
+import com.enter.net.frame.util.HibenateValiteUtil;
+import com.enter.net.frame.util.RefreshIndexs;
+import com.enter.net.frame.util.ReturnDatas;
+import com.enter.net.frame.util.log.LogUtil;
+import com.enter.net.frame.util.log.SystemControllerLog;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.springframework.stereotype.Controller;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
+
+import javax.annotation.Resource;
+import javax.validation.Valid;
+import java.util.List;
+
+/**
+*
+* @Author: ${Author}
+*
+* @Date: ${Date}
+*
+* @Description: ${Description}
+*
+* @Version: 1.0
+*
+*/
+@RequestMapping(value="jee/${ControllerUrl}")
+@Controller
+public class ${ControllerName} extends BaseEntityController<${ModelName}> {
+
+    public ${ControllerName}(){
+    super(${ModelName}.class);
+    }
+
+    @Resource
+    private ${ServiceName} ${serviceName};
+
+    @Resource
+    private FileUploadService fileUploadService;
+
+    /**
+    *
+    * @Author ${Author}
+    * @Date ${Date}
+    * @Description ${Description}-保存/修改操作
+    * @Fcunction saveObject
+    * @param sObj
+    * @param bindingResult
+    * @return ReturnDatas
+    *
+    */
+    @ResponseBody
+    @SystemControllerLog(description="${Description}-保存/修改操作")
+//  @RequestMapping(value="saveObject",method = RequestMethod.POST,produces={"application/json;charset=UTF-8"})
+//  public ReturnDatas saveObject(@RequestBody ${ModelName} sObj, BindingResult bindingResult) {
+    @RequestMapping(value="saveObject",method = RequestMethod.POST)
+    public ReturnDatas saveObject(@Valid ${ModelName} sObj, BindingResult bindingResult) {
+        ReturnDatas returnDatas = ReturnDatas.getSuccessReturnDatas();
+        String sysValiteMsg = HibenateValiteUtil.valiteBean(bindingResult);
+        if(StringUtils.isNotBlank(sysValiteMsg)) {
+            returnDatas.setStatus(ReturnDatas.ERROR);
+            returnDatas.setMessage(sysValiteMsg);
+            return returnDatas;
+        }
+        try {
+            returnDatas = ${serviceName}.saveObject(sObj);
+        } catch (Exception e) {
+            e.printStackTrace();
+            LogUtil.error("${Description}-保存/修改操作异常："+e.getMessage(),e);
+            returnDatas.setStatus(ReturnDatas.ERROR);
+            returnDatas.setMessage("${Description}-保存/修改操作异常");
+        }
+        return returnDatas;
+    }
+
+    /**
+    *
+    * @Author ${Author}
+    * @Date ${Date}
+    * @Description ${Description}-删除操作
+    * @Fcunction deleteById
+    * @param id
+    * @return ReturnDatas
+    *
+    */
+    @RequestMapping(value="deleteById",method=RequestMethod.POST)
+    @ResponseBody
+    @SystemControllerLog(description="${Description}-删除操作")
+    public ReturnDatas deleteById(String id){
+        ReturnDatas returnDatas = ReturnDatas.getSuccessReturnDatas();
+        if (StringUtils.isEmpty(id)) {
+            returnDatas.setStatus(ReturnDatas.ERROR);
+            returnDatas.setMessage("页面ID不能为空");
+            return returnDatas;
+        }
+        try {
+            returnDatas =  ${serviceName}.deleteById(id);
+        }catch (Exception e) {
+            e.printStackTrace();
+            LogUtil.error("${Description}-删除操作异常："+e.getMessage(),e);
+            returnDatas.setStatus(ReturnDatas.ERROR);
+            returnDatas.setMessage("${Description}-删除操作异常");
+        }
+        return returnDatas;
+    }
+
+    /**
+    *
+    * @Author ${Author}
+    * @Date ${Date}
+    * @Description ${Description}-文件上传操作
+    * @Fcunction upload
+    * @param file
+    * @return ReturnDatas
+    *
+    */
+    @RequestMapping(value="upload",method=RequestMethod.POST)
+    @ResponseBody
+    @SystemControllerLog(description="${Description}-文件上传操作")
+    public ReturnDatas upload(MultipartFile file){
+    ReturnDatas returnDatas = ReturnDatas.getSuccessReturnDatas();
+        try {
+            returnDatas = ${serviceName}.upload(file);
+            List<${ModelName}> list = (List<${ModelName}>) returnDatas.getData();
+            if (CollectionUtils.isNotEmpty(list)) {
+                for (${ModelName} obj:list) {
+                    ${serviceName}.validateData(obj);
+                }
+            }
+            return returnDatas;
+        }catch (Exception e) {
+            e.printStackTrace();
+            LogUtil.error("${Description}-文件上传操作异常："+e.getMessage(),e);
+            returnDatas.setStatus(ReturnDatas.ERROR);
+            returnDatas.setMessage("${Description}-文件上传操作异常");
+        }
+        return returnDatas;
+    }
+
+    /**
+    *
+    * @Author ${Author}
+    * @Date ${Date}
+    * @Description ${Description}-新增页面文件上传操作
+    * @Fcunction upload
+    * @param file
+    * @return ReturnDatas
+    *
+    */
+    @RequestMapping(value="uploadFile",method=RequestMethod.POST)
+    @ResponseBody
+    @SystemControllerLog(description="${Description}-新增页面文件上传操作")
+    public ReturnDatas uploadFile(MultipartFile file){
+        ReturnDatas returnDatas = ReturnDatas.getSuccessReturnDatas();
+        try {
+            String path = fileUploadService.upLoad3("fileupload/", "", "", file, false);
+            returnDatas.setData(path);
+            return returnDatas;
+        }catch (Exception e) {
+            e.printStackTrace();
+            LogUtil.error("${Description}-新增页面文件上传操作异常："+e.getMessage(),e);
+            returnDatas.setStatus(ReturnDatas.ERROR);
+            returnDatas.setMessage("${Description}-新增页面文件上传操作异常");
+        }
+        return returnDatas;
+    }
+}

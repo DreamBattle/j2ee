@@ -1,0 +1,560 @@
+/**
+ * @author ${Author}
+ * @date ${Date}
+ */
+$(function () {
+    fun_${jsM}();
+});
+
+var dlg_children = new dlg_return();
+
+function dlg_return() {
+    //菜单选择主页面返回值
+    var r_${jsNew} = "";
+    this.set${JsNew} = function (r_return) {
+        r_${jsNew} = r_return;
+    }
+    this.get${JsNew} = function () {
+        return r_${jsNew};
+    }
+}
+
+var fun_${jsM} = function () {
+
+    var m_select_dg_rowId = "";
+    var m_select_dg_rowIndex = 0;
+    var m_id_textbox = "";
+    var m_flag_textbox = true;
+    var m_file_url = "";
+    var m_file_obj = {};
+
+    init_fun_${jsM}();
+
+    function init_fun_${jsM}() {
+
+        init_controller();
+        init_datagrid();
+        search_reception();
+
+        layer.config({
+            extend: 'enter/layer.css', // 加载您的扩展样式
+            skin: 'layer-ext-enter'
+        });
+
+    }
+
+    function init_datagrid() {
+        var arr_columns = assemble_dg_columns1();
+        $("#dg").datagrid({
+        toolbar: '#tb',
+        pagination: true,
+        pageList: [10, 50, 100, 200, 500, 1000],
+        pageSize: 100,
+        method: 'POST',
+        rownumbers: true,
+        nowrap: false,
+        loadMsg: '正在加载数据',
+        remoteSort: true,
+        columns: [arr_columns],
+        idField: "id",
+        singleSelect: true,
+        selectOnCheck: false,
+        checkOnSelect: false,
+        view: myview_4,
+        emptyMsg: '列表为空',
+        onLoadSuccess: onLoadSuccess_dg,
+        onSelect: onSelect_row_dg,
+        sortName: 'updatetime',//定义哪些列可以进行排序。
+        sortOrder: 'desc'//定义列的排序顺序
+        // onDblClickRow:onDblClickRow_dg
+        });
+    }
+
+    function init_controller() {
+        //新增
+        $('body').on("click", "#btn_new", function () {
+            openDlg_New();
+        });
+
+        //修改
+        $('body').on("click", "#btn_edit", function () {
+            openDlg_Edit();
+        });
+
+        //查看
+        $('body').on("click", "#btn_see", function () {
+            openDlg_See();
+        });
+
+        //删除
+        $('body').on("click", "#btn_delete", function () {
+            openDlg_Delete();
+        });
+
+        //上传
+        $('#file').on('change', function (e) {
+            m_file_url = $(this).val();
+            m_file_obj = $(this)[0].files[0];
+        });
+
+        //导入
+        $('body').on("click", "#btn_import", function () {
+            import_xls();
+        });
+
+        //导出
+        $('body').on("click", "#btn_export", function () {
+            export_xls();
+        });
+
+    #foreach($nameObj in $inputMainNames)
+        #if($nameObj[3]=="datebox"||$nameObj[3]=="datetimebox")
+        $("#$nameObj[1]").$nameObj[3]({//${nameObj[0]}
+            height: g_single_col_height,
+            min:'0000-01-01',
+            max:'9999-12-31',
+            //onHidePanel: validate_startTime,
+            //onSelect: function(date){
+            //load_data();
+            //}
+        });
+        //$("#$nameObj[1]").$nameObj[3]('setValue', '');
+        #elseif($nameObj[3]=="combobox")
+        $("#$nameObj[1]").$nameObj[3]({//${nameObj[0]}
+            editable: false,
+            valueField: "value",
+            textField: "label",
+            height: g_single_col_height,
+            panelHeight: 'auto',
+            panelMaxHeight: '150',
+            // onSelect: onSelect_combobox_question_type,
+            //validType: 'isSelect',
+            filter: function (q, row) {
+                 var aa = new RegExp(q);
+                 if (aa.test(row.label) || aa.test(row.jp) || aa.test(row.qp)) {
+                     return true;
+                 } else {
+                     return false;
+                 }
+            }
+        });
+        $("#$nameObj[1]").$nameObj[3]('textbox').on("keydown", function (e) {
+            $("#$nameObj[1]").prev().$nameObj[3]("showPanel");
+        });
+        loadDictValueByIdDictType("$nameObj[1]");
+        #elseif($nameObj[3]=="searchbox")
+        $("#$nameObj[1]").$nameObj[3]({//${nameObj[0]}
+            //width: '350',
+            onChange: setTextBoxId,
+            height: g_single_col_height,
+            prompt: '搜索关键字...',
+            tooltipable: true,
+            tooltipText: '请输入关键字搜索...',
+            searcher: function (e) {
+                search_reception();
+            }
+        });
+        #else
+        $("#$nameObj[1]").$nameObj[3]({//${nameObj[0]}
+            height:g_single_col_height,
+            onChange:setTextBoxId,
+            validType: 'lengthgbk[1,200]'
+        });
+        $('#$nameObj[1]').$nameObj[3]('textbox').keydown(function (e) {
+            if (e.keyCode == 13) {
+                search_reception();
+            }
+        });
+        #end
+    #end
+
+        $('body').on('click', '#btn_serch', function () {
+            search_reception();
+        });
+
+        $('body').on('click', '#btn_reset', function () {
+            resetData();
+            search_reception();
+        });
+    }
+
+    function loadDictValueByIdDictType(id){
+        ajaxPost("jee/VDictTypeValueC/getLabelByTypeValue", {
+            "vSign": id
+        }, "json", function (data) {
+            if (data != null) {
+                var arr = [];
+                for (var i = 0; i < data.length; i++) {
+                    var item = data[i];
+                    var obj = item;
+                    obj["value"] = item.value;
+                    obj["label"] = item.label;
+                    arr.push(obj);
+                }
+                $('#'+id).combobox({data: arr});
+            }else {
+                $('#'+id).combobox({data: []});
+            }
+        });
+    }
+
+    function setTextBoxId(newValue, oldValue) {
+        if (newValue != oldValue) {
+            var id = $(this).attr('id');
+            m_id_textbox = id;
+        }
+    }
+
+    function resetData() {
+    #foreach($nameObj in $inputMainNames)
+        $("#$nameObj[1]").$nameObj[3]('clear');
+    #end
+        m_flag_textbox = true;
+    }
+
+    //导出
+    function export_xls() {
+        window.location.href = "jee/${VControllerUrl}/exportExecl";
+    }
+
+    //导入
+    function import_xls() {
+        //判断文件格式是否正确
+        if(NOTNULL(m_file_url)){
+            if(!check_upload_file_type(m_file_url)){
+                showmsgErr("附件格式不正确...");
+                return;
+            }
+        }
+        var data = new FormData();
+        data.append('file',m_file_obj);
+        var returnData = "";
+        $.ajax({
+            type:'POST',
+            url:"jee/${ControllerUrl}/upload",
+            data:data,
+            async:false,
+            processData: false,
+            contentType : false,
+            mimeType:"multipart/form-data",
+            success:function(data){
+                var json = JSON.parse(data);
+                if(json.status=="success"){
+                    showmsgOK("导入成功...");
+                    $('#dg').datagrid('reload');
+                }else {
+                    showAlertErr(json.message);
+                    $('#dg').datagrid('reload');
+                }
+            }
+        });
+        return returnData;
+    }
+
+    //检查文件上传类型
+    function check_upload_file_type(fileName){
+        var checkReturn = false;
+        fileName = fileName.split(".");
+        var arrLength = fileName.length;
+        var fileType = fileName[arrLength-1];
+        var successType = ['xls','xlsx'];//填写支持上传的后缀名
+        if(NOTNULL(fileType)){
+            for(var i=0;i<successType.length;i++){
+                if(fileType==successType[i]){
+                    checkReturn = true;
+                    break;
+                }
+            }
+        }
+        return checkReturn;
+    }
+
+    //datagrid加载完数据的回调函数
+    function onLoadSuccess_dg(data) {
+        if (NULL(data) || NULL(data.rows) || data.rows.length <= 0) {
+            scrollShow($("#dg"));
+            $("#dg").datagrid("clearSelections");
+            //return;
+        } else {
+            if (NOTNULL(m_select_dg_rowId)) {
+                $("#dg").datagrid("clearSelections");
+                $("#dg").datagrid("selectRecord", m_select_dg_rowId);
+                var tmp = $("#dg").datagrid("getSelected");
+                if (NULL(tmp)) {
+                    m_select_dg_rowIndex = 0;
+                    $("#dg").datagrid("selectRow", m_select_dg_rowIndex);
+                }
+            } else {
+                if (m_select_dg_rowIndex >= data.rows.length) {
+                    m_select_dg_rowIndex = data.rows.length - 1;
+                }
+                $("#dg").datagrid("selectRow", m_select_dg_rowIndex);
+            }
+        }
+        //autoMergeCells("dg",['question_type','question_property','content'],"createname"); //三个参数分别为：表格id，要合并字段的数组，判断字段（不一样则不合并）
+        pagerFilterEnd();
+    }
+
+    function pagerFilterEnd() {
+        // datagrid的数据加载完成后，设置搜索框获取焦点。
+        if (NOTNULL(m_id_textbox)) {
+            setTimeout(function () {
+                $("#" + m_id_textbox).searchbox("textbox").focus();
+            }, 500);
+        }else if (m_flag_textbox || NULL(m_id_textbox)) {
+            m_flag_textbox = false;
+        }
+    }
+
+    function onSelect_row_dg(rowIndex, rowData) {
+        m_select_dg_rowId = rowData.id;
+        m_select_dg_rowIndex = rowIndex;
+    }
+
+    function assemble_dg_columns1() {
+        var arr = new Array();
+        arr.push({"field": "ck", checkbox: true, "hidden": true});
+        arr.push({"field": "id", "title": 'id', "width": '1%', "align": 'center', "hidden": true});
+        #foreach($fieldObj in $mainFields)
+        arr.push({"field": "$fieldObj[1]", "title": '$fieldObj[0]', "width": '15%', "align": 'center'});
+        #end
+        //arr.push({"field": "start_date", "title": '施工日期', "width": '15%', "align": 'center',formatter:formatter_start_date});
+        return arr;
+    }
+
+    function formatter_start_date(value,row,index){
+        var time = "";
+        var flag = false;
+        if (NOTNULL(value)) {
+            time += value;
+            flag = true;
+        }
+        if (flag) {
+            if (NOTNULL(row.end_date)) {
+                time += "至" + row.end_date;
+            }
+        }else if (NOTNULL(row.end_date)) {
+            time += row.end_date;
+        }
+        return time;
+    }
+
+    function search_reception() {
+        #foreach($nameObj in $inputMainNames)
+        var $nameObj[1] = $("#$nameObj[1]").$nameObj[3]("getValue");
+        #end
+        $('#dg').datagrid('options').url = "jee/${VControllerUrl}/listAllV${className}?r_=" + Math.random();
+        $('#dg').datagrid('options').queryParams = {#foreach($nameObj in $inputMainNames)"$nameObj[1]":$nameObj[1]#if($velocityCount!=$inputMainNames.size()),#end#end};
+        $('#dg').datagrid('reload');
+    }
+
+    //删除
+    function openDlg_Delete() {
+        // 获得当前的选择行
+        var selectedRow = $("#dg").datagrid("getSelected");
+        if (NULL(selectedRow) || NULL(selectedRow.id)) {
+            showAlertWarning("请选择需要删除的信息...");
+            return false;
+        } else {
+            showmsgConfirm('确认删除该信息?', function (index) {
+                deleteObj(selectedRow.id);
+            });
+        }
+    }
+
+    function deleteObj(id) {
+        ajaxPost("jee/${ControllerUrl}/deleteById", {"id" : id}, "json", function (_json) {
+            if (_json != null) {
+                if (NOTNULL(_json.status) && _json.status == "success") {
+                    showmsgOK("删除成功...");
+                    m_select_dg_rowId = "";
+                    $('#dg').datagrid('reload');
+                } else {
+                    showAlertWarning(_json.message);
+                }
+            } else {
+                showAlertErr("删除失败，返回结果为NULL...");
+            }
+        });
+    }
+
+    function openDlg_New() {
+        var iData = {};
+        var indexs = layer.open({
+            type: 2,//iframe 类型
+            title: "新增$Description",
+            shadeClose: false,//点击遮罩层是否关闭
+            shade: 0.3,//遮罩层系数
+            scrollbar: false,//滚动条，后期可能会改
+            anim: 5,//打开动画
+            maxmin:true,//最大最小化按钮
+            content: ["view/${pageName}/${jsNew}?r=" + Math.random() + "&data=" + URLJSON(iData), 'no'], //这里content是一个URL，如果你不想让iframe出现滚动条，你还可以content: ['http://sentsin.com', 'no']
+            area: setDlgSize(3),//iframe 页面大小
+            id: "${jsNew}",//iframe 页面ID
+            resize: true,//不允许拉伸
+            success: function (layero, index) {// 弹出成功之后，隐藏最小化按钮
+            // layero.find('.layui-layer-min').hide();//加载成功后吟唱最小化按钮
+            },
+            cancel: function () {//取消事件
+
+            },
+            end: function () {//层销毁事件
+                var r_return = dlg_children.get${JsNew}();
+                if (NOTNULL(r_return) && r_return.status == "OK") {
+                    if (NOTNULL(r_return.g_return)) {
+                        m_select_dg_rowId = r_return.g_return;
+                        $('#dg').datagrid('reload');
+                    }
+                }
+                dlg_children.set${JsNew}("");
+            }
+        });
+    }
+
+    function openDlg_Edit() {
+        var selectedRow = $("#dg").datagrid("getSelected");
+        if (NULL(selectedRow) || NULL(selectedRow.id)) {
+            showAlertWarning("请选择需要编辑的信息...");
+            return;
+        }
+        var iData = {'id': selectedRow.id};
+        var indexs = layer.open({
+            type: 2,//iframe 类型
+            title: "编辑$Description",
+            shadeClose: false,//点击遮罩层是否关闭
+            shade: 0.3,//遮罩层系数
+            scrollbar: false,//滚动条，后期可能会改
+            anim: 5,//打开动画
+            maxmin:true,//最大最小化按钮
+            content: ["view/${pageName}/${jsNew}?r=" + Math.random() + "&data=" + URLJSON(iData), 'no'], //这里content是一个URL，如果你不想让iframe出现滚动条，你还可以content: ['http://sentsin.com', 'no']
+            area: setDlgSize(3),//iframe 页面大小
+            id: "${jsNew}",//iframe 页面ID
+            resize: true,//不允许拉伸
+            success: function (layero, index) {// 弹出成功之后，隐藏最小化按钮
+            // layero.find('.layui-layer-min').hide();//加载成功后吟唱最小化按钮
+            },
+            cancel: function () {//取消事件
+
+            },
+            end: function () {//层销毁事件
+                var r_return = dlg_children.get${JsNew}();
+                if (NOTNULL(r_return) && r_return.status == "OK") {
+                    if (NOTNULL(r_return.g_return)) {
+                        var r_obj = r_return.g_return;
+                        $('#dg').datagrid('reload');
+                    }
+                }
+                dlg_children.set${JsNew}("");
+            }
+        });
+    }
+
+    function openDlg_See() {
+        var selectedRow = $("#dg").datagrid("getSelected");
+        if (NULL(selectedRow) || NULL(selectedRow.id)) {
+            showAlertWarning("请选择需要查看的信息...");
+            return;
+        }
+        var iData = {'id': selectedRow.id};
+        var indexs = layer.open({
+            type: 2,//iframe 类型
+            title: "查看$Description",
+            shadeClose: false,//点击遮罩层是否关闭
+            shade: 0.3,//遮罩层系数
+            scrollbar: false,//滚动条，后期可能会改
+            anim: 5,//打开动画
+            maxmin:true,//最大最小化按钮
+            content: ["view/${pageName}/${jsSee}?r=" + Math.random() + "&data=" + URLJSON(iData), 'no'], //这里content是一个URL，如果你不想让iframe出现滚动条，你还可以content: ['http://sentsin.com', 'no']
+            area: setDlgSize(3),//iframe 页面大小
+            id: "${jsNew}",//iframe 页面ID
+            resize: true,//不允许拉伸
+            success: function (layero, index) {// 弹出成功之后，隐藏最小化按钮
+            // layero.find('.layui-layer-min').hide();//加载成功后吟唱最小化按钮
+            },
+            cancel: function () {//取消事件
+
+            },
+            end: function () {//层销毁事件
+            }
+        });
+    }
+
+    //自动合并单元格
+    function autoMergeCells(table_id,field_arr,judge){
+        var rows = $("#"+table_id).datagrid("getRows");
+        if(NULL(field_arr)||NULL(rows)){
+            return;
+        }
+        for (var i = 1; i < rows.length; i++) {
+            for (var k = 0; k < field_arr.length; k++) {
+                var field = field_arr[k]; //要排序的字段
+                if(rows[i][field] == rows[i-1][field]){ //相邻的上下两行
+                    if(NOTNULL(judge)){
+                        if(rows[i][judge] != rows[i-1][judge]){
+                            continue;
+                        }
+                    }
+                    var rowspan = 2;
+                    for (var j = 2; i-j >= 0; j++) { //判断上下多行内容一样
+                        if(rows[i][field] != rows[i-j][field]){
+                            break;
+                        }else{
+                            if(NOTNULL(judge)){
+                                if(rows[i][judge] != rows[i-j][judge]){
+                                    break;
+                                }
+                            }
+                            rowspan = j+1;
+                        }
+                    }
+                    $("#"+table_id).datagrid('mergeCells',{ //合并
+                        index: i-rowspan+1,
+                        field: field,
+                        rowspan: rowspan
+                    });
+                }
+            }
+        }
+    }
+}
+//扩展easyui表单的验证
+$.extend($.fn.validatebox.defaults.rules, {
+    //验证数字
+    isNum: {//value值为文本框中的值
+        validator: function (value) {
+            var reg = /^[0-9]*$/;
+            return reg.test(value);
+        },
+        message: '请输入数字'
+    }
+});
+//扩展easyui表单的验证
+$.extend($.fn.validatebox.defaults.rules, {
+    //验证下拉框
+    isSelect: {//value值为文本框中的值
+        validator: function (value) {
+            if ($.inArray(value, g_arr) > -1) {
+                return true;
+            } else {
+                return false;
+            }
+        },
+        message: '输入的评分标准不存在'
+    }
+});
+//扩展easyui表单的验证
+$.extend($.fn.validatebox.defaults.rules, {
+    //验证一位或两位小数或整数
+    isFloatNum: {//value值为文本框中的值
+        validator: function (value) {
+            var regFloat = /^(\-)?\d+(\.\d{1,2})?$/;
+            var regInt = /^[0-9]*$/;
+            if (regFloat.test(value) || regInt.test(value)) {
+                return true;
+            }else {
+                return false;
+            }
+        },
+        message: '请输入一位、两位小数或整数'
+    }
+});

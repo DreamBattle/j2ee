@@ -1,0 +1,451 @@
+package com.enter.net.fhbusiness.${pageName}.service.impl;
+
+import com.enter.net.fhbusiness.${pageName}.model.${ModelName};
+import com.enter.net.fhbusiness.${pageName}.service.${ServiceName};
+import com.enter.net.frame.common.SessionUser;
+import com.enter.net.frame.service.IbaseInfoService;
+import com.enter.net.frame.util.FileUploadService;
+import com.enter.net.frame.util.RefreshIndexs;
+import com.enter.net.frame.util.ReturnDatas;
+import com.enter.net.system.sysbase.model.VOrganization;
+import com.enter.net.system.sysbase.model.VUser;
+import com.enter.net.system.sysbase.service.VOrganizationService;
+import com.enter.net.util.Util;
+import org.apache.commons.lang.StringUtils;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import javax.annotation.Resource;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ *
+ * @Author: ${Author}
+ *
+ * @Date: ${Date}
+ *
+ * @Description: ${Description}-接口实现类
+ *
+ * @Version: 1.0
+ *
+ */
+@Service("${serviceName}")
+public class ${ServiceImplName} implements ${ServiceName} {
+
+    @Resource
+    private IbaseInfoService baseInfoService;
+
+    @Resource
+    private FileUploadService fileUploadService;
+
+    @Value("${dir.virtual}")
+    private String virtualDir;
+
+    @Resource
+    private VOrganizationService vOrganizationService;
+
+    /**
+     * @Description ${Description}-保存/修改操作
+     * @param obj
+     * @return ReturnDatas
+     * @throws Exception
+     *
+     */
+    @Override
+    @Transactional(propagation = Propagation.REQUIRED)
+    public ReturnDatas saveObject(${ModelName} obj) throws Exception {
+    ReturnDatas returnDatas = ReturnDatas.getSuccessReturnDatas();
+        //		if (!validateData(obj)) {
+        //			returnDatas.setStatus(ReturnDatas.ERROR);
+        //			returnDatas.setMessage("存在相同数据！");
+        //			return returnDatas;
+        //		}
+        String id = obj.getId();
+        String time = Util.nowTime();
+        String userId = SessionUser.getUserId();
+        if (StringUtils.isBlank(obj.getCreatetime())) {//新增
+            obj.setCreatetime(time);
+            obj.setCreateuser(userId);
+        }else {//编辑
+            deleteById(id);
+        }
+        obj.setUpdatetime(time);
+        obj.setUpdateuser(userId);
+        ${ModelName} d = baseInfoService.save(obj);
+        returnDatas.setData(d);
+        return returnDatas;
+    }
+
+    /**
+     * @Description ${Description}-删除操作
+     * @param id
+     * @return Integer
+     * @throws Exception
+     *
+     */
+    @Override
+    @Transactional(propagation = Propagation.REQUIRED)
+    public ReturnDatas deleteById(String id) throws Exception {
+        ReturnDatas returnDatas = ReturnDatas.getSuccessReturnDatas();
+        if (id.indexOf("@@") > -1) {
+            String[] arr = id.split("@@");
+            id = "";
+            for (int i = 0; i < arr.length; i++) {
+                id += "'"+arr[i]+"'";
+                if (i != arr.length - 1) {
+                    id += ",";
+                }
+            }
+        }else {
+            id = "'" + id + "'";
+        }
+        String sql = "begin delete ${tableName} where id in ("+id+");end;";
+        baseInfoService.countexecuteBySql(sql);
+        return returnDatas;
+    }
+
+    /**
+     *
+     * @Author ${Author}
+     * @Date ${Date}
+     * @Description 获取下一个排序号
+     * @Fcunction getNextIndexs
+     * @return long
+     * @throws Exception
+     *
+     */
+    private long getNextIndexs() throws Exception {
+        String sql = "";
+        sql = "select max(indexs) as maxindexs from ${tableName} t";
+        Object obj = baseInfoService.getObjectBySql(sql);
+        String tmpIndexs = Util.getString(obj);
+        long nextIndexs = 1;
+        if (!"".equals(tmpIndexs)) {
+            nextIndexs = Integer.parseInt(tmpIndexs) + 1;
+        }
+        return nextIndexs;
+    }
+
+
+    /**
+     *
+     * @Description ${Description}-文件上传操作
+     * @param file
+     * @return ReturnDatas
+     *
+     */
+    @Override
+    @Transactional(propagation = Propagation.REQUIRED)
+    public ReturnDatas upload(MultipartFile file)throws Exception{
+        ReturnDatas returnDatas = ReturnDatas.getSuccessReturnDatas();
+        // 判断是否存在附件
+        if (file == null) {
+            returnDatas.setStatus(ReturnDatas.WARNING);
+            returnDatas.setMessage("没有需要上传的附件。");
+            return returnDatas;
+        }
+        List<?> rows = vOrganizationService.listAllTreegrid("").getRows();
+        List<String> org_name_list = new ArrayList<>();
+        List<String> org_id_list = new ArrayList<>();
+        for (Object temp:rows) {
+            VOrganization obj = (VOrganization) temp;
+            org_name_list.add(obj.getName());
+            org_id_list.add(obj.getId());
+        }
+        String fileType = "";
+        String name = name = file.getOriginalFilename();
+        // 上传导入的附件
+        String filePath = fileUploadService.upLoad3("fileupload/", "", "", file, false);
+        if (filePath.equals("")) {
+            returnDatas.setStatus(ReturnDatas.WARNING);
+            returnDatas.setMessage("导入时上传附件失败！");
+            return returnDatas;
+        }
+        // 获得附件名称
+        if (name != null && name.length() > 0) {
+            if (name.lastIndexOf(".") > 0) {
+                fileType = name.substring(name.lastIndexOf("."), name.length());
+            }
+        }
+        File xls_file = new File(virtualDir + filePath);
+        List<List<String>> dataList = getExcelData(xls_file);
+        List<Integer> index_columns = new ArrayList<>();
+        List<String> key_columns = Arrays.asList(new String[]{"责任人","责任部门","职名","联系方式","政治面貌","是否为管理人员"});
+        String[] value_columns = {"name_user","name_org","name_postduty","phone","political_status","is_management"};
+        boolean column_flag = true;
+        List<${ModelName}> list = new ArrayList<>();
+        String userid = SessionUser.getUserId();
+        String time = Util.nowTime();
+        for (int i = 0; i < dataList.size(); i++) {
+            List<String> row = dataList.get(i);
+            if (column_flag) {//获取要用的列，只获取一次
+                for (int j = 0; j < row.size(); j++) {
+                    String column = row.get(j);
+                    if (key_columns.contains(column)) {//标题行
+                        column_flag = false;
+                        index_columns.add(j);
+                    }
+                }
+                continue;
+            }
+            ${ModelName} obj = new ${ModelName}();
+            for (int j = 0; j < row.size(); j++) {
+                if (index_columns.contains(j)) {
+                    String value = row.get(j);
+                    int index = index_columns.indexOf(j);//获取集合位置
+                    String key = value_columns[index];
+                    if ("name_org".equals(key)) {
+                        if (!org_name_list.contains(value)) {
+                            returnDatas.setStatus(ReturnDatas.WARNING);
+                            returnDatas.setMessage("导入失败，第"+(i+1)+"行的责任部门不在部门管理下！");
+                            return returnDatas;
+                        }else {
+                            setField(obj, "id_org", org_id_list.get(org_name_list.indexOf(value)));
+                            setField(obj, "name_org", value);
+                        }
+                    }else if("phone".equals(key)) {
+                        if(value.equals("是")) {
+                            setField(obj, "phone","");
+                        }else {
+                            setField(obj, "phone",value);
+                        }
+                    }else if("political_status".equals(key)) {
+                        if(value.equals("党员")) {
+                            setField(obj, "political_status","1");
+                        }else if(value.equals("群众")){
+                            setField(obj, "political_status","2");
+                        }else{
+                            setField(obj, "political_status","");
+                        }
+                    }else if ("is_management".equals(key)) {//判断是否为管理人员
+                        if (value.equals("是")) {
+                            String hql="select u from VUser u where u.name='"+row.get(0)+"'";
+                            List<VUser> listUser=baseInfoService.listQueryByHql(hql);
+                            if(listUser.size()>1) {
+                                returnDatas.setStatus(ReturnDatas.WARNING);
+                                returnDatas.setMessage("导入失败，第"+(i+1)+"行的责任人在用户信息下匹配到多条数据！");
+                                return returnDatas;
+                            }else if(listUser.size()==0){
+                                returnDatas.setStatus(ReturnDatas.WARNING);
+                                returnDatas.setMessage("导入失败，第"+(i+1)+"行的责任人(管理人员)在用户信息匹配不到数据！");
+                                return returnDatas;
+                            }else{
+                                setField(obj, "id_user",listUser.get(0).getId());
+                                setField(obj, "is_management","1");
+                            }
+                        }else {
+                            if(row.get(j-1).equals("是")){
+                                String hql="select u from VUser u where u.name='"+row.get(0)+"'";
+                                List<VUser> listUser=baseInfoService.listQueryByHql(hql);
+                                if(listUser.size()>1) {
+                                    returnDatas.setStatus(ReturnDatas.WARNING);
+                                    returnDatas.setMessage("导入失败，第"+(i+1)+"行的责任人在用户信息下匹配到多条数据！");
+                                    return returnDatas;
+                                }else if(listUser.size()==0){
+                                    returnDatas.setStatus(ReturnDatas.WARNING);
+                                    returnDatas.setMessage("导入失败，第"+(i+1)+"行的责任人(管理人员)在用户信息匹配不到数据！");
+                                    return returnDatas;
+                                }else{
+                                    setField(obj, "id_user",listUser.get(0).getId());
+                                    setField(obj, "is_management","1");
+                                }
+                            }
+                        }
+                    }else {
+                        setField(obj, key, value);
+                    }
+                    String hql="select u from ConstructionDayPlan u where u.name_user='"+row.get(0)+"' and u.name_org = '"+row.get(1)+"' ";
+                    List<${ModelName}> listPerson=baseInfoService.listQueryByHql(hql);
+                    if(listPerson.size()==0) {
+                        if (validateData(obj)) {
+                            obj.setCreateuser(userid);
+                            obj.setUpdateuser(userid);
+                            obj.setCreatetime(time);
+                            obj.setUpdatetime(time);
+                            list.add(obj);
+                        }
+                    }
+                }
+            }
+        }
+        long next = getNextIndexs()-1;
+        for (int i = list.size()-1; i >=0 ; i--) {//倒序添加排序号，序号越大排序越前
+            next++;
+            ${ModelName} obj = list.get(i);
+            //			obj.setIndexs(next);
+        }
+        baseInfoService.saveList(list);
+        returnDatas.setData(list);
+        return returnDatas;
+    }
+
+    /**
+     *
+     * @Author ${Author}
+     * @Date ${Date}
+     * @Description set方法
+     * @Fcunction setField
+     * @parm obj
+     * @parm key_field
+     * @parm value_field
+     * @throws Exception
+     *
+     */
+    private void setField(${ModelName} obj, String key_field, String value_field) throws Exception {
+        Field field = ${ModelName}.class.getDeclaredField(key_field);
+        field.setAccessible(true);
+        field.set(obj,value_field);
+    }
+
+    /**
+     *
+     * @Author ${Author}
+     * @Date ${Date}
+     * @Description 验证重复
+     * @Fcunction validateData
+     * @parm obj
+     * @return boolean
+     * @throws Exception
+     *
+     */
+    @Override
+    @Transactional(propagation = Propagation.REQUIRED)
+    public boolean validateData(${ModelName} obj) throws Exception {
+        boolean flag = true;
+        String sql = "select  * from ${tableName} where " +
+//				"name_org = '"+obj.getName_org()+"' "+
+//				"and name_user = '"+obj.getName_user()+"' " +
+//				"and phone = '"+obj.getPhone()+"' " +
+//				"and name_postduty = '"+obj.getName_postduty()+"' " +
+//				"and id_org = '"+obj.getId_org()+"' " +
+                "and id <> '"+obj.getId()+"'";
+        List<${ModelName}> list = baseInfoService.listQueryBySQLHib(sql,${ModelName}.class);
+        int num = list.size();
+        if(num>0){
+            flag = false;
+            if (num > 1) {//如果重复则删除重复的只剩一条
+                for (int i = 0; i < num; i++) {
+                    if (i != 0) {
+                        String id = list.get(i).getId();
+                        deleteById(id);
+                    }
+                }
+            }
+        }
+        return flag;
+    }
+
+    /**
+     *
+     * @Author ${Author}
+     * @Date ${Date}
+     * @Description 获取上传的excel数据
+     * @Fcunction getExcelData
+     * @return List<List<String>>
+     * @parm file
+     * @throws Exception
+     *
+     */
+    private List<List<String>> getExcelData(File file) {
+        List<List<String>> dataList = new ArrayList<List<String>>();
+        try {
+            Workbook workbook = null; // excel对象
+            String fileName = file.getName().toLowerCase(); // 获取文件名
+            if (fileName.endsWith("xls")) {
+                workbook = new HSSFWorkbook(new FileInputStream(file));
+            } else if (fileName.endsWith("xlsx")) {
+                workbook = new XSSFWorkbook(new FileInputStream(file));
+            } else {
+                throw new RuntimeException("您选择的文件不是一个Excel文件...");
+            }
+            Sheet sheet = workbook.getSheetAt(0); // 获取excel中的第一个表格
+            int rows = sheet.getLastRowNum();// 获取最后一行，即得到表格中的数据行数
+            if (rows == 0) {
+                throw new RuntimeException("表格中没有数据...");
+            }
+            int columnCount = sheet.getRow(0).getPhysicalNumberOfCells();
+            for (int i = 0; i <= rows; i++) {
+                // 获取第i列的row对象
+                Row row = sheet.getRow(i);
+                ArrayList<String> listRow = new ArrayList<String>();
+                for (int j = 0; j < columnCount; j++) {
+                    //如果未null则加上""组装成非null的字符串
+                    if(row.getCell(j) == null){
+                        listRow.add("");
+                    }else{//如果读取到额cell不为null 则直接加入	listRow集合
+                        listRow.add(getCellValue(row.getCell(j)));
+                    }
+                }
+                dataList.add(listRow);// 将这一行数据存到dataList中
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return dataList;
+    }
+
+    /**
+     *
+     * @Author ${Author}
+     * @Date ${Date}
+     * @Description 把读取的内容类型转成String
+     * @Fcunction getCellValue
+     * @return String
+     * @throws Exception
+     *
+     */
+    private String getCellValue(Cell cell) {
+        String cellValue = "";
+        if (cell == null) {
+            return cellValue;
+        }
+        //把数字当成String来读，避免出现1读成1.0的情况
+        if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
+            cell.setCellType(Cell.CELL_TYPE_STRING);
+        }
+        //判断数据的类型
+        switch (cell.getCellType()) {
+            case Cell.CELL_TYPE_NUMERIC: //数字
+                cellValue = String.valueOf(cell.getNumericCellValue());
+                break;
+            case Cell.CELL_TYPE_STRING: //字符串
+                cellValue = String.valueOf(cell.getStringCellValue());
+                break;
+            case Cell.CELL_TYPE_BOOLEAN: //Boolean
+                cellValue = String.valueOf(cell.getBooleanCellValue());
+                break;
+            case Cell.CELL_TYPE_FORMULA: //公式
+                cellValue = String.valueOf(cell.getCellFormula());
+                break;
+            case Cell.CELL_TYPE_BLANK: //空值
+                cellValue = "";
+                break;
+            case Cell.CELL_TYPE_ERROR: //故障
+                cellValue = "非法字符";
+                break;
+            default:
+                cellValue = "未知类型";
+                break;
+        }
+        return cellValue;
+    }
+
+}

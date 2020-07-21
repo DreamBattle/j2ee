@@ -1,0 +1,133 @@
+package com.enter.net.fhbusiness.${pageName}.controller;
+
+import com.enter.net.fhbusiness.${pageName}.service.${VServiceName};
+import com.enter.net.fhbusiness.${pageName}.model.${VModelName};
+import com.enter.net.frame.common.BaseEntityController;
+import com.enter.net.frame.util.ReturnDatas;
+import com.enter.net.frame.util.log.LogUtil;
+import com.enter.net.frame.util.log.SystemControllerLog;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
+import java.io.OutputStream;
+
+/**
+ *
+ * @Author: ${Author}
+ *
+ * @Date: ${Date}
+ *
+ * @Description: ${Description}
+ *
+ * @Version: 1.0
+ *
+ */
+@RequestMapping(value="jee/${VControllerUrl}")
+@Controller
+public class ${VControllerName} extends BaseEntityController<${VModelName}> {
+
+    public ${VControllerName}(){
+        super(${VModelName}.class);
+    }
+
+    @Resource
+    private ${VServiceName} ${vServiceName};
+
+    /**
+     *
+     * @Author ${Author}
+     * @Date ${Date}
+     * @Description ${Description}-查询操作
+     * @Fcunction listAllV${className}
+     * @param rows
+     * @param page
+     * @param sort
+     * @param order
+#foreach($nameObj in $inputMainNames)
+     * @param $nameObj[1]
+#end
+     * @param key
+     * @return Object
+     *
+     */
+    @RequestMapping(value = "listAllV${className}", method = RequestMethod.POST)
+    @ResponseBody
+    @SystemControllerLog(description = "${Description}-查询操作")
+    public Object listAllV${className}(Integer rows, Integer page, String sort, String order,#foreach($nameObj in $inputMainNames)String $nameObj[1],#end String key) {
+    ReturnDatas returnDatas = ReturnDatas.getSuccessReturnDatas();
+        try {
+            return ${vServiceName}.listAllV${className}(rows, page, sort, order,#foreach($nameObj in $inputMainNames)$nameObj[1],#end key);
+        } catch (Exception e) {
+            e.printStackTrace();
+            LogUtil.error("${Description}查询异常：" + e.getMessage(), e);
+            returnDatas.setStatus(ReturnDatas.ERROR);
+            returnDatas.setMessage("${Description}查询异常");
+        }
+        return returnDatas;
+    }
+
+    /**
+     *
+     * @Author ${Author}
+     * @Date ${Date}
+     * @Description ${Description}-查询操作(下拉框查询使用)
+     * @Fcunction listV${className}
+     * @return Object
+     *
+     */
+    @RequestMapping(value="listV${className}",method=RequestMethod.POST )
+    @ResponseBody
+    @SystemControllerLog(description="${Description}-查询操作(排序初始化使用)")
+    public Object listV${className}(){
+        ReturnDatas returnDatas = ReturnDatas.getSuccessReturnDatas();
+        try {
+            return ${vServiceName}.listV${className}();
+        } catch (Exception e) {
+            e.printStackTrace();
+            LogUtil.error("${Description}-查询(排序初始化使用)异常："+e.getMessage(),e);
+            returnDatas.setStatus(ReturnDatas.ERROR);
+            returnDatas.setMessage("${Description}-查询(排序初始化使用)异常");
+        }
+        return returnDatas;
+    }
+
+    /**
+     *
+     * @Author ${Author}
+     * @Date ${Date}
+     * @Description ${Description}导出功能
+     * @Fcunction exportExecl
+     * @param response
+     * @return ReturnDatas
+     *
+     */
+    @ResponseBody
+    @SystemControllerLog(description="${Description}导出功能")
+    @RequestMapping(value="exportExecl")
+    public ReturnDatas exportExecl(HttpServletResponse response){
+        ReturnDatas returnDatas = ReturnDatas.getSuccessReturnDatas();
+        try {
+            response.setCharacterEncoding("UTF-8");
+            response.setContentType("application/msexcle");
+            response.setHeader("content-disposition", "attachment;filename="+new String("${Description}".getBytes("utf-8"),"ISO8859-1")+".xls");
+            HSSFWorkbook workbook = ${vServiceName}.exportExecl();
+            //写入Excel文件
+            OutputStream outputStream =  response.getOutputStream();
+            workbook.write(outputStream);
+            outputStream.close();
+            returnDatas.setStatus(ReturnDatas.SUCCESS);
+            return returnDatas;
+        } catch (Exception e) {
+            e.printStackTrace();
+            LogUtil.error("${Description}导出功能异常："+e.getMessage(),e);
+            returnDatas.setStatus(ReturnDatas.ERROR);
+            returnDatas.setMessage("${Description}导出功能异常。");
+        }
+        return returnDatas;
+    }
+}

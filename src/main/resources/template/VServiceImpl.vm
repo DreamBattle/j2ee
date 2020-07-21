@@ -1,0 +1,140 @@
+package com.enter.net.fhbusiness.${pageName}.service.impl;
+
+import com.enter.net.fhbusiness.${pageName}.model.${VModelName};
+import com.enter.net.fhbusiness.${pageName}.service.${VServiceName};
+import com.enter.net.frame.service.IbaseInfoService;
+import com.enter.net.frame.util.PageResult;
+import com.enter.net.util.ExportUtil;
+import org.apache.commons.lang.StringUtils;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ *
+ * @Author: ${Author}
+ *
+ * @Date: ${Date}
+ *
+ * @Description: ${Description}视图-接口实现类
+ *
+ * @Version: 1.0
+ *
+ */
+@Service("${vServiceName}")
+public class ${VServiceImplName} implements ${VServiceName} {
+
+    @Resource
+    private IbaseInfoService baseInfoService;
+
+    private List<${VModelName}> list;
+
+    /**
+     *
+     * @Description ${Description}-查询操作
+     * @param rows
+     * @param page
+     * @param sort
+     * @param order
+#foreach($nameObj in $inputMainNames)
+     * @param $nameObj[1]
+#end
+     * @param key
+     * @return PageResult
+     * @throws Exception
+     *
+     */
+    @Override
+    public PageResult listAllV${className}(Integer rows, Integer page, String sort, String order,#foreach($nameObj in $inputMainNames)String $nameObj[1],#end String key) throws Exception {
+        String hql = "";
+        String hqlCount = "";
+        Object total = null;
+
+        List<Object> ls_param = new ArrayList<Object>();
+        hql = "from ${VModelName} u where 1=1 ";
+        hqlCount = "select count(u) from ${VModelName} u where 1=1 ";
+
+        #foreach($nameObj in $inputMainNames)
+        if(StringUtils.isNotBlank($nameObj[1])) {
+            hql += " and instr($nameObj[1],?) > 0 ";
+            hqlCount += " and instr($nameObj[1],?) > 0 ";
+            ls_param.add($nameObj[1]);
+        }
+        #end
+        if(StringUtils.isNotBlank(key)) {
+            hql+= " and (instr(id_org,?) > 0 or instr(name_user,?) > 0) ";
+            hqlCount += " and (instr(id_org,?) > 0 or instr(name_user,?) > 0) ";
+            ls_param.add(key);
+            ls_param.add(key);
+        }
+        if(StringUtils.isNotBlank(sort)&&StringUtils.isNotBlank(order)) {
+            hql += " order by " + sort + " " + order;
+        }
+        if (rows == null && page == null) {
+            list = baseInfoService.listQueryByHql(hql,ls_param);
+        }else {
+            list = baseInfoService.listQueryByHql(hql,ls_param,rows,page);
+        }
+        total = baseInfoService.getObjectByHql(hqlCount,ls_param);
+
+        PageResult result = new PageResult();
+        if (list != null) {
+            result.setRows(list);
+            if (total != null) {
+                result.setTotal(Integer.parseInt(total.toString()));
+            } else {
+                result.setTotal(0);
+            }
+        }
+        return result;
+    }
+
+    /**
+     *
+     * @Description ${Description}-查询操作(下拉框查询使用)
+     * @return List<V${className}>
+     * @throws Exception
+     *
+     */
+    @Override
+    public List<${VModelName}> listV${className}() throws Exception {
+        String hql = "from ${VModelName} u where 1=1 order by createtime desc";
+        return baseInfoService.listQueryByHql(hql);
+    }
+
+    /**
+     *
+     * @Description ${Description}导出功能
+     * @return HSSFWorkbook
+     *
+     */
+    @Override
+    public HSSFWorkbook exportExecl() throws Exception{
+        String[][] heads = {{"序号",#foreach($nameObj in $mainFields)"$nameObj[0]"#if($velocityCount!=$mainFields.size()),#end#end}};
+        String[] key_columns = {#foreach($nameObj in $mainFields)"$nameObj[1]"#if($velocityCount!=$mainFields.size()),#end#end};
+        List<List<String>> rows = new ArrayList<>();
+        for (int i = 0; i < list.size(); i++) {
+            List<String> row = new ArrayList<>();
+            row.add(i+1+"");
+            for (int j = 0; j < key_columns.length; j++) {
+                String data = ExportUtil.getFiled(list.get(i), key_columns[j]);
+                row.add(data);
+            }
+            rows.add(row);
+        }
+        String title = "${Description}";
+        int[][] contentsMerge = {{0, 0, 0, $mainFields.size()}};
+        Map<Integer, Integer> widths = new HashMap<>();
+        widths.put(0,1500);
+        for (int i = 1; i < $mainFields.size(); i++) {
+            widths.put(i,8000);
+        }
+        return ExportUtil.exportAllExcel(title, title, null, heads, rows, widths, contentsMerge,null);
+    }
+}
+

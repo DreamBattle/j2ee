@@ -1,0 +1,64 @@
+package com.enter.net.fhbusiness.${pageName}.service;
+
+import com.enter.net.fhbusiness.${pageName}.model.${VModelName};
+import com.enter.net.frame.util.PageResult;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+
+import java.util.List;
+
+/**
+ *
+ * @Author: ${Author}
+ *
+ * @Date: ${Date}
+ *
+ * @Description: ${Description}视图-接口
+ *
+ * @Version: 1.0
+ *
+ */
+public interface V${className}Service {
+
+    /**
+     *
+     * @Author ${Author}
+     * @Date ${Date}
+     * @Description ${Description}-查询操作
+     * @Fcunction listAllV${className}
+     * @param rows
+     * @param page
+     * @param sort
+     * @param order
+#foreach($nameObj in $inputMainNames)
+     * @param $nameObj[1]
+#end
+     * @param key
+     * @return PageResult
+     * @throws Exception
+     *
+     */
+    public PageResult listAllV${className}(Integer rows, Integer page, String sort, String order,#foreach($nameObj in $inputMainNames)String $nameObj[1],#end String key) throws Exception;
+    
+    /**
+     *
+     * @Author ${Author}
+     * @Date ${Date}
+     * @Description ${Description}-查询操作(下拉框查询使用)
+     * @Fcunction listV${className}
+     * @return List
+     * @throws Exception
+     *
+     */
+    public List<${VModelName}> listV${className}() throws Exception;
+    
+    /**
+     *
+     * @Author ${Author}
+     * @Date ${Date}
+     * @Description ${Description}导出功能
+     * @Fcunction exportExecl
+     * @return HSSFWorkbook
+     *
+     */
+    public HSSFWorkbook exportExecl() throws Exception;
+}

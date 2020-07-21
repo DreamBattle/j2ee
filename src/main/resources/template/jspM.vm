@@ -1,0 +1,63 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+pageEncoding="UTF-8"%>
+<%@ include file="../common/headM.jsp"%>
+<%@ include file="../common/headExtendBase.jsp" %>
+<%@ include file="../common/headExtendDgNavigating.jsp" %>
+<%@ include file="../common/headExtendDgTooltip.jsp" %>
+<%@ include file="../common/headExtendDgCustomColumnProp.jsp" %>
+<%@ include file="../common/headExtendDgRowContext.jsp" %>
+<%@ include file="../common/headExtendDgLiveSearch.jsp" %>
+<%@ include file="../common/headExtendDgColumnWidthInCookie.jsp" %>
+<%@ include file="../common/headExtendDgCellEdit.jsp" %>
+<%@ include file="../common/headExtendTextboxTooltip.jsp" %>
+<%@ include file="../common/headExtendTextboxgrid.jsp" %>
+<%@ taglib prefix="shiro" uri="http://shiro.apache.org/tags"%>
+<script type="text/javascript" src="inc2/${pageName}/${jsM}.js?version=${r_version}"></script>
+<link type="text/css" href="res2/css/style2/style2.0/fh/personLiableUploadFile.css" rel="stylesheet">
+<head>
+    <base href="<%=basePath%>" />
+    <title>${Description}</title>
+</head>
+
+<body class="panel-noscroll">
+<div class="easyui-layout" style="width:100%;height:100%;">
+    <div id="user_layout" data-options="region:'center',border:false,split:true">
+        <table id="dg" style="height: 100%;">
+            <thead>
+
+            </thead>
+        </table>
+    </div>
+</div>
+<div id="tb" style="padding:2px 5px;">
+    #foreach($nameObj in $inputMainNames)
+        $nameObj[0]：<input type="text" id="$nameObj[1]" />
+    #end
+    <a class="easyui-linkbutton btn-default" id="btn_serch" data-options="iconCls:'icon-search',plain:true">查询</a>
+    <a class="easyui-linkbutton btn-default" id="btn_reset" data-options="iconCls:'icon-reload',plain:true">重置</a>
+    <!--  分割线 -->
+    <span class="split-line">
+		<span class="datagrid-btn-separator"></span>
+	</span>
+    <a class="easyui-linkbutton btn-blue" id="btn_new" data-options="iconCls:'icon-add',plain:true">新增</a>
+
+    <a class="easyui-linkbutton btn-green" id="btn_edit" data-options="iconCls:'icon-edit',plain:true">编辑</a>
+
+    <a class="easyui-linkbutton btn-red" id="btn_delete" data-options="iconCls:'icon-remove',plain:true">删除</a>
+    <!--  分割线 -->
+    <%--<span class="split-line">--%>
+		<%--<span class="datagrid-btn-separator"></span>--%>
+	<%--</span>--%>
+    <%--<form name="" method="post" action="" enctype="multipart/form-data" id="saveInputForm" onkeydown="if(event.keyCode==13){return false;}">--%>
+    <%--<div class="upload-file">--%>
+        <%--<a class="easyui-linkbutton btn-default" data-options="iconCls:'icon-add',plain:true">导入</a>--%>
+        <%--<input type="file" name="file" id="file">--%>
+        <%--</div>--%>
+    <%--</form>--%>
+    <%--<a id="btn_import" class="easyui-linkbutton c4" data-options="plain:true">导入</a>--%>
+    <%--<a id="btn_export" class="easyui-linkbutton c4" data-options="iconCls:'icon-print',plain:true">导出</a>--%>
+</div>
+</body>
+</html>
+
+

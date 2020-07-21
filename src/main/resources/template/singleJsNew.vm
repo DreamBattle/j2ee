@@ -1,0 +1,542 @@
+/**
+ * @author ${Author}
+ * @date ${Date}
+ */
+var g_return = "";
+$(function() {
+    fun_${jsNew}();
+});
+
+var fun_${jsNew} = function() {
+
+    var m_editObj = null;
+    var m_id_${jsID} = "";
+    var m_dynamic_html1 = "";
+    var m_dynamic_html1_1 = "";
+    var m_dynamic_html1_2 = "";
+    var m_dynamic_html1_3 = "";
+    var m_flag_submit = true;
+    var m_obj_upload = [];
+    var m_obj_upload_local = [];
+    var m_org_id = [];
+    var m_arr_dynamic_obj = [];
+    var m_file = "";
+    var m_file_path = "";
+
+    init_fun_${jsNew}();
+
+    function init_fun_${jsNew}() {
+        if (NOTNULL(g_in_data)) {
+            g_in_obj = $.parseJSON(g_in_data);
+            m_id_${jsID} = g_in_obj.id;
+        } else {
+            showAlertErr("输入参数获取失败，请刷新后重试...",function() {
+            parent.layer.close(g_in_index);
+        });
+            return;
+        }
+        load_dynamic_html();
+        init_saveInputForm();
+        init_btn();
+        pagerFilterEnd('');
+        layer.config({
+            extend: 'enter/layer.css', // 加载您的扩展样式
+            skin: 'layer-ext-enter'
+        });
+
+    }
+
+    function init_btn(){
+        $('body').on("click", "#btnSaveSingle", function(){
+            if(m_flag_submit){
+                m_flag_submit = false;
+                packingSaveObj();
+            }else{
+                showAlertWarning("请勿重复提交表单信息。");
+            }
+        });
+    }
+
+    // 保存输入的形式
+    function init_saveInputForm() {
+        var str_html = init_input();
+        $("#table_info").html(str_html);
+        init_input_validate_1();
+        if(NOTNULL(m_id_${jsID})) {
+            loadObjById(m_id_${jsID});
+        }
+    }
+
+    function load_dynamic_html() {
+        m_dynamic_html1 = document.getElementById("singleRow_tpl1").value;
+        m_dynamic_html1_1 = document.getElementById("singleRow_tpl1_1").value;
+        m_dynamic_html1_2 = document.getElementById("singleRow_tpl1_2").value;
+        m_dynamic_html1_3 = document.getElementById("dynamic_html1_3").value;
+        $("#singleRow_dynamic").html("");
+    }
+
+    function get_tr_html_content_1(str1,str2,str3){
+        var str_html = m_dynamic_html1;
+        str_html = str_html.replace('{*data1}',str1);
+        str_html = str_html.replace('{*data2}',str2);
+        if(NOTNULL(str3) && str3 == 1) {
+            str_html = str_html.replace('{*data3}','is-required');
+        }
+        return str_html;
+    }
+
+    function get_tr_html_content_13(str1, str2, str3) {
+        var str_html = m_dynamic_html1_3;
+        str_html = str_html.replace('{*data1}', str1);
+        str_html = str_html.replace('{*data2}', str2);
+        str_html = str_html.replace('{*data3}', str3);
+        str_html = str_html.replace('{*data3}', str3);
+        return str_html;
+    }
+
+    function get_tr_html_content_11(str1, str2,str3) {
+        var str_html = m_dynamic_html1_1;
+        str_html = str_html.replace('{*data1}', str1);
+        str_html = str_html.replace('{*data2}', str2);
+        if(NOTNULL(str3) && str3 == 1){
+            str_html = str_html.replace('{*data3}','is-required');
+        }
+        return str_html;
+    }
+
+    function get_tr_html_content_12(str1, str2, str3, str4) {
+        var str_html = m_dynamic_html1_2;
+        str_html = str_html.replace('{*data1}', str1);
+        str_html = str_html.replace('{*data2}', str2);
+        str_html = str_html.replace('{*data3}', str3);
+        if(NOTNULL(str4) && str4 == 1){
+            str_html = str_html.replace('{*data5}','is-required');
+        }
+        return str_html;
+    }
+
+    function init_input() {
+        var str_html = "";
+        #foreach($nameObj in $inputNewNames)
+        #if($nameObj[3]=="checkbox")
+        str_html += get_tr_html_content_11("$nameObj[0]:", "$nameObj[1]",$nameObj[2]);
+        #elseif($nameObj[3]=="select")
+        str_html += get_tr_html_content_12("$nameObj[0]:", "$nameObj[1]","btn_$nameObj[1]",$nameObj[2]);
+        #else
+        str_html += get_tr_html_content_1("$nameObj[0]:", "$nameObj[1]",$nameObj[2]);
+        #end
+        #end
+        //str_html += get_tr_html_content_13("选择文件:", "file_path","file_f");
+        return str_html;
+    }
+
+    function init_input_validate_1(){
+    #foreach($nameObj in $inputNewNames)
+        #if($nameObj[3]=="datebox"||$nameObj[3]=="datetimebox")
+        $("#$nameObj[1]").$nameObj[3]({//${nameObj[0]}
+            required: $nameObj[4],
+            width: g_single_col_width,
+            height: g_single_col_height,
+            min:'0000-01-01',
+            max:'9999-12-31',
+            //onHidePanel: validate_startTime,
+            //onSelect: function(date){
+                //load_data();
+            //}
+        });
+        //$("#$nameObj[1]").$nameObj[3]('setValue', '');
+        #elseif($nameObj[3]=="combobox")
+        $("#$nameObj[1]").$nameObj[3]({//${nameObj[0]}
+            required: $nameObj[4],
+            editable: false,
+            valueField: "value",
+            textField: "label",
+            width: g_single_col_width,
+            height: g_single_col_height,
+            panelHeight: 'auto',
+            panelMaxHeight: '150',
+            // onSelect: onSelect_combobox_question_type,
+        // filter: function (q, row) {
+        //     var aa = new RegExp(q);
+        //     if (aa.test(row.label) || aa.test(row.jp) || aa.test(row.qp)) {
+        //         return true;
+        //     } else {
+        //         return false;
+        //     }
+        // }
+        });
+        $("#$nameObj[1]").$nameObj[3]('textbox').on("keydown", function (e) {
+            $("#$nameObj[1]").prev().$nameObj[3]("showPanel");
+        });
+        loadDictValueByIdDictType("$nameObj[1]");
+        //loadCombobox($nameObj[1],"${VControllerUrl}/listV${className}","id","name");
+        #elseif($nameObj[3]=="select")
+        $("#$nameObj[1]").textbox({//${nameObj[0]}
+            required : $nameObj[4],
+            editable: false,
+            height:g_single_col_height,
+            width:g_single_col_width,
+            validType: 'lengthgbk[1,200]'
+        });
+        $('body').on("click", "#btn_$nameObj[1]", function () {
+            selectOrg('$nameObj[1]');
+        });
+        #elseif($nameObj[3]=="numberbox")
+        $("#$nameObj[1]").numberbox({//${nameObj[0]}
+            required : $nameObj[4],
+            editable: false,
+            height:g_single_col_height,
+            min: 0,
+            max: 10000000,
+            validType: 'isNum',
+        });
+        #elseif($nameObj[3]!="checkbox")
+        $("#$nameObj[1]").$nameObj[3]({//${nameObj[0]}
+            required : $nameObj[4],
+            height:g_single_col_height,
+            width:g_single_col_width,
+            validType: 'lengthgbk[1,200]'
+        });
+        #end
+    #end
+
+        //选择文件
+        //$("#file_path").textbox({
+            //readonly: true,
+            //height : g_single_col_height,
+            //width : '50%',
+        //});
+        //$('body').on("change", "#file_f", onchange_file_f);
+    }
+
+    function pagerFilterEnd(id) {
+        //设置搜索框获取焦点。
+        if (NOTNULL(id)) {
+            setTimeout(function () {
+                $("#" + id).textbox("textbox").focus();
+            }, 500);
+        }
+    }
+
+    function selectOrg(id){
+        var ids = $('#'+id).textbox('getValue');
+        var arr = [];
+        if (NOTNULL(ids)) {
+            if (ids.indexOf(",") > -1) {
+                arr = ids.split(",");
+            }else {
+                arr.push(ids);
+            }
+        }
+        var iData = {"arr":arr};
+        var indexs = parent.layer.open({
+            type: 2,//iframe 类型
+            title: "选择部门",
+            shadeClose: false,//点击遮罩层是否关闭
+            shade: 0.3,//遮罩层系数
+            scrollbar: true,//滚动条，后期可能会改
+            anim: 5,//打开动画
+            maxmin: true,
+            content: ["view/${pageName}/${selectOrg}?r=" + Math.random() + "&data=" + URLJSON(iData)], //这里content是一个URL，如果你不想让iframe出现滚动条，你还可以content: ['http://sentsin.com', 'no']
+            content: ["view/${pageName}/${selectSingleOrg}?r=" + Math.random() + "&data=" + URLJSON(iData)], //这里content是一个URL，如果你不想让iframe出现滚动条，你还可以content: ['http://sentsin.com', 'no']
+            area: setDlgSize(2),//iframe 页面大小
+            id: "selectOrg",//iframe 页面ID
+            resize: true,//不允许拉伸
+            success: function (layero, index) {// 弹出成功之后，隐藏最小化按钮
+            // layero.find('.layui-layer-min').hide();//加载成功后吟唱最小化按钮
+            },
+            cancel: function () {//取消事件
+
+            },
+            end: function () {//层销毁事件
+                var r_return = parent.dlg_children.get${JsNew}();
+                if (NOTNULL(r_return) && r_return.status == "OK") {
+                    if (NOTNULL(r_return.g_return)) {
+                        var r_obj = r_return.g_return;
+                        $('#'+id).textbox('setValue', r_obj["id"]);
+                        $('#'+id).textbox('setText', r_obj["name"]);
+                        //$('#' + id).attr('data', JSON.stringify(r_obj["arr"]));
+                        $('#'+id).next().children('textarea').attr('title', r_obj["name"]);
+                    }
+                }
+                parent.dlg_children.set${JsNew}("");
+            }
+        });
+    }
+
+    function loadCombobox(id,url,value,label) {
+        ajaxPost("jee/" + url, {}, "json", function (data) {
+            if (data != null && data.length > 0) {
+                var arr = [];
+                for (var i = 0; i < data.length; i++) {
+                    var item = data[i];
+                    var obj = item;
+                    obj["value"] = item[value];
+                    obj["label"] = item[label];
+                    arr.push(obj);
+                }
+                $('#' + id).combobox({data: arr});
+                if (arr.length > 0) {
+                    $('#' + id).combobox('select', arr[0]["value"]);
+                }
+            } else {
+                $('#' + id).combobox({data: []});
+            }
+        });
+    }
+
+    function loadDictValueByIdDictType(id){
+        ajaxPost("jee/VDictTypeValueC/getLabelByTypeValue", {
+            "vSign": id
+        }, "json", function (data) {
+            if (data != null && data.length > 0) {
+                var arr = [];
+                for (var i = 0; i < data.length; i++) {
+                    var item = data[i];
+                    var obj = item;
+                    obj["value"] = item.value;
+                    obj["label"] = item.label;
+                    arr.push(obj);
+                }
+                $('#'+id).combobox({data: arr});
+                if (arr.length > 0) {
+                    $('#' + id).combobox('select', arr[0]["value"]);
+                }
+            }else {
+                $('#'+id).combobox({data: []});
+            }
+        });
+    }
+
+    function onchange_file_f() {
+        m_file = this.files[0];
+        var objUrl = getObjectURL(this.files[0]);
+        var name = this.files[0].name;
+        var fileName = $(this).val();
+        var name = this.files[0].name;
+        var unload_file = $(this)[0].files[0];
+        var checkType = check_upload_file_type(fileName);
+        if(!checkType){
+            showAlertErr("只支持上传doc、jpg、pdf等格式...");
+            return;
+        }
+        m_obj_upload[objUrl] = objUrl;
+        m_obj_upload_local[objUrl] = unload_file;
+        $("#file_path").textbox("setText",name);
+    }
+
+    function getObjectURL(file) {
+        var url = null ;
+        if (window.createObjectURL!=undefined) { // basic
+            url = window.createObjectURL(file) ;
+        } else if (window.URL!=undefined) { // mozilla(firefox)
+            url = window.URL.createObjectURL(file) ;
+        } else if (window.webkitURL!=undefined) { // webkit or chrome
+            url = window.webkitURL.createObjectURL(file) ;
+        }
+        return url ;
+    }
+
+    //检查文件上传类型
+    function check_upload_file_type(fileName){
+        var checkReturn = false;
+        fileName = fileName.split(".");
+        var arrLength = fileName.length;
+        var fileType = fileName[arrLength-1];
+        var successType = ['jpg','jpeg','bmp','png','gif','JPG','JPEG','BMP','PNG','GIF','doc','docx','xls','xlsx','pdf'];//填写支持上传的后缀名
+        if(NOTNULL(fileType)){
+            for(var i=0;i<successType.length;i++){
+                if(fileType==successType[i]){
+                    checkReturn = true;
+                    break;
+                }
+            }
+        }
+        return checkReturn;
+    }
+
+
+    function packingSaveObj(){
+        //m_file_path = onload_local_dg()
+        if($('#saveInputForm').form('validate')){
+            var sObj = new Object();
+        #foreach($nameObj in $inputNewNames)
+            #if($nameObj[3]=="checkbox")
+            if ($("#$nameObj[1]").prop("checked")) {
+                sObj["$nameObj[1]"] = "1";
+            } else {
+                sObj["$nameObj[1]"] = "0";
+            }
+            #elseif($nameObj[3]=="select")
+            sObj["$nameObj[1]"] = $("#$nameObj[1]").textbox("getValue").trim();//$nameObj[0]
+            #else
+            sObj["$nameObj[1]"] = $("#$nameObj[1]").$nameObj[3]("getValue").trim();//$nameObj[0]
+            #end
+        #end
+            //文件
+            //if(NULL(m_file_path)){
+                //sObj["file_path"] = m_editObj["file_path"];
+            //}else{
+                //sObj["file_path"] = m_file_path;
+            //}
+            if(NOTNULL(m_editObj)) {
+                if(NOTNULL(m_editObj["createuser"])){
+                    sObj["createuser"] = m_editObj["createuser"];
+                }
+                if(NOTNULL(m_editObj["createtime"])){
+                    sObj["createtime"] = m_editObj["createtime"];
+                }
+                sObj["id"] = m_editObj["id"];
+            }
+            saveObj(sObj);
+        }else {
+            m_flag_submit = true;
+            showAlertWarning("填写的内容不正确，请按照提示信息填写正确的信息。");
+        }
+    }
+
+    //保存
+    function saveObj(p_obj) {
+        ajaxPost("jee/${ControllerUrl}/saveObject",p_obj,"json",function(_json) {
+            if (_json != null) {
+                if(NOTNULL(_json.status) && _json.status == "success") {
+                    var tmp_g_return = new Object();
+                    tmp_g_return["status"] = "OK";
+                    tmp_g_return["g_return"] = _json.data;
+                    parent.dlg_children.set${JsNew}(tmp_g_return);
+                    parent.layer.close(g_in_index);
+                    m_flag_submit = true;
+                    showmsgOKTop("保存成功...");
+                } else {
+                    m_flag_submit = true;
+                    showAlertWarning(_json.message);
+                }
+            } else {
+                m_flag_submit = true;
+                showAlertErr("保存失败，返回结果为NULL...");
+            }
+        });
+    }
+
+    function loadObjById(p_id) {
+        if (NULL(p_id)) {
+            return;
+        }
+        ajaxPost("jee/${VControllerUrl}/getObjectById", {
+            "id": p_id
+        }, "json", function(data) {
+            if (data != null) {
+                m_editObj = data;
+                setInputValue(m_editObj);
+            }
+        });
+    }
+
+    //设置输入值
+    function setInputValue(data) {
+        //if(NOTNULL(data.file_name)){
+            //$("#file_name").textbox("setText", data.file_name);
+        //}
+        //if(NOTNULL(data.file_path)){
+            //m_file_path = data.file_path;
+            //var url = data.file_path;
+            //var index = url.lastIndexOf("\/");
+            //url =url.substring(index+1,url.length);
+            //$("#file_path").textbox("setText", url);
+        //}
+    #foreach($nameObj in $inputNewNames)
+        #if($nameObj[3]=="checkbox")
+        if(data.$nameObj[1] == "1") {
+            $("#$nameObj[1]").attr("checked", "checked");
+        }else {
+            $("#$nameObj[1]").removeAttr("checked");
+        }
+        #elseif($nameObj[3]=="select")
+        if(NOTNULL(data.$nameObj[1])){
+            $("#$nameObj[1]").textbox("setValue", data.$nameObj[1]);//$nameObj[0]
+            $("#$nameObj[1]").textbox("setText", data.$nameObj[1]_val);//$nameObj[0]
+        }
+        #elseif($nameObj[3]=="combobox")
+        if(NOTNULL(data.$nameObj[1])){
+            $("#$nameObj[1]").$nameObj[3]("select", data.$nameObj[1]);//$nameObj[0]
+        }
+        #else
+        if(NOTNULL(data.$nameObj[1])){
+            $("#$nameObj[1]").$nameObj[3]("setValue", data.$nameObj[1]);//$nameObj[0]
+        }
+        #end
+    #end
+
+    }
+
+    //上传表格的图片
+    function onload_local_dg(){
+        var file_path = onload_ajax(m_file);
+        return file_path;
+    }
+
+    //保存上传的图片到项目指定路径下
+    function onload_ajax(obj){
+        var data = new FormData();
+        data.append('file',obj);
+        var returnData = "";
+        $.ajax({
+            type:'POST',
+            url:"jee/${ControllerUrl}/uploadFile",
+            data:data,
+            async:false,
+            processData: false,
+            contentType : false,
+            mimeType:"multipart/form-data",
+            success:function(data){
+                var obj = JSON.parse(data);
+                if(obj.status=="success"){
+                    returnData = obj.data;
+                }
+            }
+        });
+        return returnData;
+    }
+}
+//扩展easyui表单的验证
+$.extend($.fn.validatebox.defaults.rules, {
+    //验证数字
+    isNum: {//value值为文本框中的值
+        validator: function (value) {
+            var reg = /^[0-9]*$/;
+            return reg.test(value);
+        },
+        message: '请输入数字'
+    }
+});
+//扩展easyui表单的验证
+$.extend($.fn.validatebox.defaults.rules, {
+    //验证下拉框
+    isSelect: {//value值为文本框中的值
+        validator: function (value) {
+            if ($.inArray(value, g_arr) > -1) {
+                return true;
+            } else {
+                return false;
+            }
+        },
+        message: '输入的评分标准不存在'
+    }
+});
+//扩展easyui表单的验证
+$.extend($.fn.validatebox.defaults.rules, {
+    //验证一位或两位小数或整数
+    isFloatNum: {//value值为文本框中的值
+        validator: function (value) {
+            var regFloat = /^(\-)?\d+(\.\d{1,2})?$/;
+            var regInt = /^[0-9]*$/;
+            if (regFloat.test(value) || regInt.test(value)) {
+                return true;
+            }else {
+                return false;
+            }
+        },
+        message: '请输入一位、两位小数或整数'
+    }
+});
+

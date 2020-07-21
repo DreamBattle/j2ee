@@ -1,0 +1,72 @@
+package com.enter.net.fhbusiness.${pageName}.service;
+
+import com.enter.net.fhbusiness.${pageName}.model.${ModelName};
+import com.enter.net.frame.util.RefreshIndexs;
+import com.enter.net.frame.util.ReturnDatas;
+import org.springframework.web.multipart.MultipartFile;
+
+/**
+ *
+ * @Author: ${Author}
+ *
+ * @Date: ${Date}
+ *
+ * @Description: ${Description}-接口
+ *
+ * @Version: 1.0
+ *
+ */
+public interface ${ServiceName} {
+
+    /**
+     *
+     * @Author ${Author}
+     * @Date ${Date}
+     * @Description ${Description}-保存/修改操作
+     * @Fcunction saveObject
+     * @param obj
+     * @return ReturnDatas
+     * @throws Exception
+     *
+     */
+    public ReturnDatas saveObject(${ModelName} obj) throws Exception;
+    
+    /**
+     *
+     * @Author ${Author}
+     * @Date ${Date}
+     * @Description ${Description}-删除操作
+     * @Fcunction deleteById
+     * @param id
+     * @return ReturnDatas
+     * @throws Exception
+     *
+     */
+    public ReturnDatas deleteById(String id) throws Exception;
+    
+    /**
+     *
+     * @Author ${Author}
+     * @Date ${Date}
+     * @Description ${Description}-文件上传操作
+     * @Fcunction upload
+     * @param file
+     * @return ReturnDatas
+     *
+     */
+    public ReturnDatas upload(MultipartFile file)throws Exception;
+    
+    /**
+     *
+     * @Author ${Author}
+     * @Date ${Date}
+     * @Description 验证重复
+     * @Fcunction validateData
+     * @parm obj
+     * @return boolean
+     * @throws Exception
+     *
+     */
+    public boolean validateData(${ModelName} obj) throws Exception;
+
+}

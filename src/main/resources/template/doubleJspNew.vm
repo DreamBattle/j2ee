@@ -1,0 +1,70 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ include file="../common/headNewTwo.jsp"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <title>${Description}新增修改</title>
+    <script type="text/javascript" src="inc2/${pageName}/${jsNew}.js"></script>
+    <script type="text/javascript">
+        var g_in_data = <%="'" + data + "'"%>;
+        if (NULL(g_in_data)) {
+            g_in_data = "";
+        }
+        var g_in_index = parent.layer.getFrameIndex(window.name);
+    </script>
+    <style>
+        .file-left {
+            position: relative;
+            float: right;
+        }
+        .file-left input[type=file] {
+            width: 100px;
+            height: 30px;
+            position: absolute;
+            top: 1px;
+            left: 0;
+            outline: none;
+            opacity: 0;
+            z-index: 10;
+            cursor: pointer;
+        }
+        .single-row .right-btn {
+            margin-left: 15px;
+            height: 24px;
+            width: 65px;
+            line-height: 24px;
+            border-radius: 0;
+            position: absolute;
+            top: 0;
+            left: 50%;
+            cursor: pointer;
+            text-align: center;
+        }
+        }
+        .c1 {
+            color: #fff;
+            background: #3ca2e0;
+            border: 1px solid #3ca2e0;
+        }
+    </style>
+</head>
+<body class="panel-noscroll">
+<div class="easyui-layout" style="width:100%;height:100%;">
+    <div data-options="region:'center',border:false,split:true">
+        <form name="saveInputForm" method="post" action="" id="saveInputForm">
+            <div class="container" id="table_info" style="padding: 20px;"></div>
+        </form>
+    </div>
+    <div data-options="region:'south',border:false" style="height: 40px;">
+        <div id="bottom" class="content-footer">
+            <button id="btnSaveSingle" class="easyui-linkbutton c1">保存</button>
+            <button class="easyui-linkbutton c4"
+                    onclick="parent.layer.close(g_in_index);">关闭</button>
+        </div>
+    </div>
+</div>
+<%@ include file="../template/doubleRow.html"%>
+</body>
+</html>
+
+
